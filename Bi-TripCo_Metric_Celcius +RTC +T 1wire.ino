@@ -17,8 +17,13 @@
 #include <Adafruit_SSD1306.h>   // library for the OLED and graphics
 #include <Adafruit_GFX.h>
 
-#define OLED_RESET 4
-Adafruit_SSD1306 display(OLED_RESET);
+#define SCREEN_WIDTH 128 // OLED display width, in pixels
+#define SCREEN_HEIGHT 64 // OLED display height, in pixels
+
+// Declaration for an SSD1306 display connected to I2C (SDA, SCL pins)
+#define OLED_RESET     4 // Reset pin # (or -1 if sharing Arduino reset pin)
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+
 
 RTC_DS3231 rtc;
 
@@ -807,7 +812,7 @@ ISR(TIMER1_OVF_vect) //TIMER1 overflow interrupt -- occurs every 1sec --
 void distance()
 {
   vss_pulses++;
-  traveled_distance += vss_pulse_distance;
+  traveled_distance  += vss_pulse_distance;
   traveled_distance2 += vss_pulse_distance;
   traveled_distance3 += vss_pulse_distance;
   traveled_distance4 += vss_pulse_distance;
@@ -838,8 +843,8 @@ void LPG_Consumption()
 
   else  instant_LPG_consumption = LPG_injector_open_duration * LPG_injector_flow * 3600; // when the car stops calculates the instant consumption in l/h
 
-  used_LPG = used_LPG + (LPG_injector_open_duration * LPG_injector_flow);
-  used_LPG2 = used_LPG2 + (LPG_injector_open_duration * LPG_injector_flow);
+  used_LPG    = used_LPG    + (LPG_injector_open_duration * LPG_injector_flow);
+  used_LPG2   = used_LPG2   + (LPG_injector_open_duration * LPG_injector_flow);
   LPG_in_tank = LPG_in_tank - (LPG_injector_open_duration * LPG_injector_flow);
 }
 
