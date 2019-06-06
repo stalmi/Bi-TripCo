@@ -42,18 +42,19 @@ byte LPG1, LPG2, LPG3, LPG4, digitLPG, pos = 0;
 volatile unsigned long vss_pulses;
 volatile float traveled_distance, traveled_distance2, traveled_distance3, traveled_distance4, seconds_passed, speed, avg_speed, distance_to_LPGstation, distance_per_sec;
 volatile float used_LPG, used_LPG2, instant_LPG_consumption, avg_LPG_consumption, LPG_in_tank, Full_tank = 45.00; //Full_tank: put your LPG Tank capacity
-volatile float  srednieLPG , chwilowe, dystans, sredniePB, zasieg, zostaloLPG, poziomLPG;
 volatile float used_Unleaded, used_Unleaded2;
 volatile float average_L_100km_Unlead;
 
 volatile unsigned long unleadTime1 = 0, unleadTime2 = 0, unleadinj_Open_Duration = 0;
 volatile unsigned long LPG_injector_open_duration = 0, injTime1 = 0, injTime2 = 0;
 int postemp;
-int vss_pin = 2; // VSS signal input at digital pin 2 (INT0)
-int LPG_pin = 3; // LPG injector signal input at digital pin 3 (INT1)
-int ignition_pin = 9; // ignition signal input
-int unleaded_pin = 12; // Unleaded injector signal input
-int analogPin = A3; // poziom paliwa
+int speedSensor_pin = 2;  // VSS signal input at digital pin 2 (INT0)
+int injectorLPG_pin = 3;  // LPG injector signal input at digital pin 3 (INT1)
+int ACCignition_pin = 9;  // ignition signal input
+int injectorPb_pin  = 12; // Unleaded injector signal input
+int Button1_pin     = 11; // Button 1
+int Button2_pin     = 10; // Button 2
+
 float tempC;
 
 
@@ -68,9 +69,6 @@ int h = 0, m = 0, s, m1;
 boolean timeRead = false, displaychange = true;
 float thermReading, steinhart;
 boolean dots = true;
-//int poziom = 0;
-int temperatura;
-
 
 //Below are the variables declaration for the thermistor -- you can find more info at: https://learn.adafruit.com/thermistor/using-a-thermistor
 #define THERMISTORPIN A0
@@ -307,13 +305,13 @@ const unsigned char snowflake [] PROGMEM = {
 
 void setup()
 {
-  pinMode(10, INPUT); // Button 2
-  pinMode(11, INPUT); // Button 1
+  pinMode(Button1_pin, INPUT); // Button 1
+  pinMode(Button2_pin, INPUT); // Button 2
 
-  pinMode(vss_pin, INPUT);
-  pinMode(LPG_pin, INPUT);
-  pinMode(ignition_pin, INPUT);
-  pinMode(unleaded_pin, INPUT);
+  pinMode(speedSensor_pin, INPUT);
+  pinMode(injectorLPG_pin, INPUT);
+  pinMode(ACCignition_pin, INPUT);
+  pinMode(injectorPb_pin, INPUT);
 
   // below recalls the values stored in case of power loss
   traveled_distance = EEPROM.readFloat(0);
@@ -341,7 +339,7 @@ void setup()
     TIMSK1 |= (1 << TOIE1);
     TCNT1 = 3036; // counter initial value so as to overflow every 1sec
 
-  attachPCINT(digitalPinToPinChangeInterrupt(ignition_pin), ignitionSignal, CHANGE);
+  attachPCINT(digitalPinToPinChangeInterrupt(ACCignition_pin), ignitionSignal, CHANGE);
 
   interrupts();
   delay(10);
@@ -355,9 +353,9 @@ void loop()
   {
     // Serial.println("pin9_LOW");
     // Serial.println(menunumber);
-    detachInterrupt(digitalPinToInterrupt(vss_pin));
-    detachInterrupt(digitalPinToInterrupt(LPG_pin));
-    detachPCINT(digitalPinToPinChangeInterrupt(unleaded_pin));
+    detachInterrupt(digitalPinToInterrupt(speedSensor_pin));
+    detachInterrupt(digitalPinToInterrupt(injectorLPG_pin));
+    detachPCINT(digitalPinToPinChangeInterrupt(injectorPb_pin));
     delay(50);
     ignition = false;
     if (menunumber == 11)
@@ -421,9 +419,9 @@ void loop()
 
     display.display();
 
-    attachInterrupt(digitalPinToInterrupt(vss_pin), distance, RISING); // attaches the interrupt which related to the VSS signal
-    attachInterrupt(digitalPinToInterrupt(LPG_pin), LPG_injector_time, CHANGE); // interrupt for LPG injector signal
-    attachPCINT(digitalPinToPinChangeInterrupt(unleaded_pin), UnleadedTime, CHANGE); // petrol injector signal input and interrupt
+    attachInterrupt(digitalPinToInterrupt(speedSensor_pin), distance, RISING); // attaches the interrupt which related to the VSS signal
+    attachInterrupt(digitalPinToInterrupt(injectorLPG_pin), LPG_injector_time, CHANGE); // interrupt for LPG injector signal
+    attachPCINT(digitalPinToPinChangeInterrupt(injectorPb_pin), UnleadedTime, CHANGE); // petrol injector signal input and interrupt
     while (millis() - logohold < 3000) ;
 
   }
