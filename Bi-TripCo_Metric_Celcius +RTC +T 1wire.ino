@@ -16,6 +16,8 @@
 #include <math.h>               // enables complex math functions
 #include <Adafruit_SSD1306.h>   // library for the OLED and graphics
 #include <Adafruit_GFX.h>
+#include <OneWire.h>            // library for the Dallas temperature sensors
+#include <DallasTemperature.h>
 
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
 #define SCREEN_HEIGHT 64 // OLED display height, in pixels
@@ -24,6 +26,10 @@
 #define OLED_RESET     4 // Reset pin # (or -1 if sharing Arduino reset pin)
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
+#define ONE_WIRE_BUS A2
+OneWire oneWire(ONE_WIRE_BUS);
+DallasTemperature sensors(&oneWire);
+DeviceAddress outside;
 
 RTC_DS3231 rtc;
 
@@ -523,7 +529,7 @@ void loop()
 // below are the misc screens
 switch (menunumber)
 {
-    case 0:
+    case 0: // Momentary LPG consumption / spalanie chwilowe LPG
 cons1:  display.clearDisplay();
         if(inst_disp == true) displaychange = false, inst_disp = false, digitLPG = 0, pos = 0;
         display.setTextColor(WHITE);
@@ -542,7 +548,7 @@ cons1:  display.clearDisplay();
         display.display();
     break;
 
-    case 1:
+    case 1: // Average LPG consumption / spalanie średnie LPG
         display.clearDisplay();
         display.setTextColor(WHITE);
         display.drawBitmap(0, 0,  averagecons, 64, 32, WHITE);
@@ -559,7 +565,7 @@ cons1:  display.clearDisplay();
         display.display();
     break;
 
-    case 2:
+    case 2: // Current speed - speedometer/ aktualna prędkość - prędkościomierz
         display.clearDisplay();
         display.setTextColor(WHITE);
         display.drawBitmap(49, 1,  speedometer, 32, 32, WHITE);
@@ -578,7 +584,7 @@ cons1:  display.clearDisplay();
         display.display();
     break;
 
-    case 3:
+    case 3: // Average speed - avspeed/ średnia prędkość
         display.clearDisplay();
         display.setTextColor(WHITE);
         display.drawBitmap(31, 0,  avspeed, 64, 32, WHITE);
@@ -597,7 +603,7 @@ cons1:  display.clearDisplay();
         display.display();
     break;
 
-    case 4:
+    case 4: // Traveled distance - dist / przejechany dystans
         display.clearDisplay();
         display.setTextColor(WHITE);
         display.drawBitmap(48, 0,  dist, 32, 32, WHITE);
@@ -610,7 +616,7 @@ cons1:  display.clearDisplay();
         display.display();
     break;
 
-    case 5:
+    case 5: // Remain distance on LPG tank / pozostały dystans na zbiorniku LPG
         display.clearDisplay();
         display.setTextColor(WHITE);
         display.drawBitmap(0, 0,  dist_to_LPG, 128, 32, WHITE);
@@ -624,7 +630,7 @@ cons1:  display.clearDisplay();
         display.display();
     break;
 
-    case 6:
+    case 6: // Total LPG litres burnt / spalony LPG ze zbiornika
         display.clearDisplay();
         display.setTextColor(WHITE);
         display.drawBitmap(0, 0,  leaf, 32, 32, WHITE);
@@ -641,7 +647,7 @@ cons1:  display.clearDisplay();
         display.display();
     break;
 
-    case 7:
+    case 7: // LPG litres remain in tank / pozostały zapas w zbiorniku LPG
         display.clearDisplay();
         display.setTextColor(WHITE);
         display.drawBitmap(31, 0,  FuelTank, 64, 32, WHITE);
@@ -655,7 +661,7 @@ cons1:  display.clearDisplay();
         display.display();
     break;
 
-    case 8:
+    case 8: // Temperature and clock / temperatura i zegarek
       temp1:
         if(inst_disp == true) displaychange = false, inst_disp = false;
         display.clearDisplay();
@@ -663,27 +669,35 @@ cons1:  display.clearDisplay();
         sensors.requestTemperatures();
         float tempC = sensors.getTempCByIndex(0);
 //        printTemperature();
-//        display.drawFastHLine(0, 28, 128, WHITE);
-//        display.drawFastHLine(0, 29, 128, WHITE);
-//        display.setCursor(7, 36);
-//        display.setTextSize(4);
-//        printTime();
 
         display.setCursor(40, 0);
         display.setTextSize(4);
         display.print(tempC, 1);
+        display.setCursor(100, -2);
+        display.setTextSize(1);
+        display.print(F("o"));
+        display.setCursor(108, 0);
+        display.setTextSize(3);
+        display.print(F("C"));
+
         display.setTextSize(1);
         display.setCursor(16, 24);
         display.print(F("TEMP. ZEWNETRZNA"));
 
-        if(steinhart < 3.5)
-          {
-          display.drawBitmap(0, 3,  snowflake, 16, 16, WHITE);
-          }
+        if(tempC < 3.5)
+          { display.drawBitmap(0, 3,  snowflake, 16, 16, WHITE); }
+        
+        //RTC
+        display.drawFastHLine(0, 28, 128, WHITE);
+        display.drawFastHLine(0, 29, 128, WHITE);
+        display.setCursor(7, 36);
+        display.setTextSize(4);
+        printTime();
+
         display.display();
     break;
 
-    case 9:
+    case 9: // Average Pb consumption / spalanie średnie Pb
         display.clearDisplay();
         display.setTextColor(WHITE);
         display.drawBitmap(0, 8,  average, 16, 16, WHITE);
@@ -698,7 +712,7 @@ cons1:  display.clearDisplay();
         display.display();
     break;
 
-    case 10:
+    case 10: // Total Pb litres burnt / spalony Pb ze zbiornika
         display.clearDisplay();
         display.setTextColor(WHITE);
         display.drawBitmap(96, 0,  Unleaded_fill_nozzle, 32, 32, WHITE); //(x,y, name, DX, DY, color)
@@ -719,7 +733,7 @@ cons1:  display.clearDisplay();
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // the following are secondary displays and activated only in case we want to set the LPG Coef.(case 11) or the Time (case 12)
 
-    case 11: // LPG Coef. Setting menu
+    case 11: // LPG Coef. Setting menu / ustawienia współczynnika LPG
         display.clearDisplay();
         display.setTextColor(WHITE);
         display.setCursor(0,9);
@@ -753,7 +767,7 @@ cons1:  display.clearDisplay();
         display.display();
     break;
 
-    case 12: //RTC set
+    case 12: //RTC set / ustawianie zegarka
         display.clearDisplay();
         display.setTextColor(WHITE);
         display.setCursor(0,9);
